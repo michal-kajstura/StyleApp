@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">StyleApp</string>
+    <string name="gallery_tab">Gallery</string>
+    <string name="settings_tab">Settings</string>
+</resources>
