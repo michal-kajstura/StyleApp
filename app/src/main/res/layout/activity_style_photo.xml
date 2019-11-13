@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".gallery.StylePhotoActivity">
+    tools:context=".controller.StylePhotoActivity">
 
     <ImageView
         android:id="@+id/styled_photo"
@@ -15,6 +15,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:scaleType="centerCrop"
+        android:scaleType="fitStart"
+        android:adjustViewBounds="true"
         app:srcCompat="@drawable/placeholder" />
 </androidx.constraintlayout.widget.ConstraintLayout>

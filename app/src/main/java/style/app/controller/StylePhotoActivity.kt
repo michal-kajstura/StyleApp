@@ -1,16 +1,16 @@
-package style.app.gallery
+package style.app.controller
 
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.palette.graphics.Palette
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_style_photo.*
 import style.app.R
+import style.app.model.Photo
 import java.lang.Exception
 
 class StylePhotoActivity : AppCompatActivity() {
@@ -35,7 +35,8 @@ class StylePhotoActivity : AppCompatActivity() {
             .load(photo.path)
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.error)
-            .fit()
+            .resize(1000, 1000)
+            .centerInside()
             .into(styled_photo, object : Callback {
                 override fun onSuccess() {
                     val bitmap = (styled_photo.drawable as BitmapDrawable).bitmap

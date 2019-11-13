@@ -1,4 +1,4 @@
-package style.app.gallery
+package style.app.controller
 
 import android.content.Context
 import android.content.Intent
@@ -9,8 +9,9 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import style.app.R
+import style.app.model.Photo
 
-class PhotoGalleryAdapter(val context: Context, val photos: Array<Photo>)
+class PhotoGalleryAdapter(val context: Context, val photos: List<Photo>)
     : RecyclerView.Adapter<PhotoGalleryAdapter.PhotoViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
@@ -32,7 +33,8 @@ class PhotoGalleryAdapter(val context: Context, val photos: Array<Photo>)
             .load(photo.path)
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.error)
-            .fit()
+            .resize(500, 500)
+            .centerCrop()
             .into(imageView)
     }
 

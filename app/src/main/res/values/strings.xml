@@ -2,4 +2,5 @@
     <string name="app_name">StyleApp</string>
     <string name="gallery_tab">Gallery</string>
     <string name="settings_tab">Settings</string>
+    <string name="permission_toast">All necessary permissions are granted</string>
 </resources>
