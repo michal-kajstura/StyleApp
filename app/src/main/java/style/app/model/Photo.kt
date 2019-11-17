@@ -4,12 +4,13 @@ import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 
-data class Photo(val path: Uri?) : Parcelable {
+data class Photo(val uri: Uri?, val path: String?) : Parcelable {
 
-    constructor(parcel: Parcel) : this(Uri.parse(parcel.readString()))
+    constructor(parcel: Parcel) : this(Uri.parse(parcel.readString()), parcel.readString())
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(path.toString())
+        parcel.writeString(uri.toString())
+        parcel.writeString(path)
     }
 
     override fun describeContents(): Int {

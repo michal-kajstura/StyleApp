@@ -43,12 +43,11 @@ class GalleryActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupGallery(imageUris: List<Uri>) {
+    private fun setupGallery(photos: List<Photo>) {
         val layoutManager = GridLayoutManager(this, 2)
         galleryRecyclerView = gallery
         galleryRecyclerView.setHasFixedSize(true)
         galleryRecyclerView.layoutManager = layoutManager
-        val photos = imageUris.map {uri -> Photo(uri) }
         photoGalleryAdapter = PhotoGalleryAdapter(this, photos)
     }
 
@@ -67,11 +66,12 @@ class GalleryActivity : AppCompatActivity() {
         }
     }
 
-    fun getImagesFromGallery(): List<Uri> {
+    fun getImagesFromGallery(): List<Photo> {
         val externalUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val orderBy = MediaStore.Images.Media.DATE_MODIFIED;
+        val orderBy = MediaStore.Images.Media.DATE_ADDED
         val columns = arrayOf(
-            MediaStore.Images.Media._ID
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DATA
         )
         val cursor = contentResolver.query(
             externalUri,
@@ -81,14 +81,17 @@ class GalleryActivity : AppCompatActivity() {
             orderBy
         )
 
-        val images = mutableListOf<Uri>()
+        val images = mutableListOf<Photo>()
         if (cursor != null) {
             cursor.moveToFirst()
             val dataColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val pathColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
             while (cursor.moveToNext()) {
                 val imageId = cursor.getLong(dataColumnIndex)
+                val path = cursor.getString(pathColumnIndex)
                 val imageUri = Uri.withAppendedPath(externalUri, "" + imageId)
-                images.add(imageUri)
+                val image = Photo(imageUri, path)
+                images.add(image)
             }
             cursor.close()
         }

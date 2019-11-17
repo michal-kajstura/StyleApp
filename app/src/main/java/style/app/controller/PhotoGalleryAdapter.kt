@@ -30,7 +30,7 @@ class PhotoGalleryAdapter(val context: Context, val photos: List<Photo>)
         val imageView = holder.photoImageView
 
         Picasso.get()
-            .load(photo.path)
+            .load(photo.uri)
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.error)
             .resize(500, 500)
