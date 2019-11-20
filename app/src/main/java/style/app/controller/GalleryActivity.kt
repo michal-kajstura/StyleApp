@@ -68,7 +68,7 @@ class GalleryActivity : AppCompatActivity() {
 
     fun getImagesFromGallery(): List<Photo> {
         val externalUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val orderBy = MediaStore.Images.Media.DATE_ADDED
+        val orderBy = MediaStore.Images.Media.DATE_ADDED + " DESC"
         val columns = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DATA

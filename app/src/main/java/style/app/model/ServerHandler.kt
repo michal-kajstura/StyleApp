@@ -4,120 +4,85 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import com.jcraft.jsch.JSch
-import java.io.BufferedOutputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.net.Socket
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.file.Files
+import okhttp3.*
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 
-class ServerHandler {
-    private val jsch = JSch()
+class ConnectionHandler {
 
-    class OpenSshTask: AsyncTask<ServerHandler, Void, Unit>() {
-        override fun doInBackground(vararg params: ServerHandler?){
-            val handler = params[0]
-            if (handler != null) {
-                val session = handler.jsch.getSession(USERNAME, HOSTNAME, PORT)
-                session.setConfig("StrictHostKeyChecking", "no")
-                session.setPassword(PASSWORD)
-                session.timeout = 100000
-                session.connect()
-                session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
-            }
+    class OpenSshTask: AsyncTask<Unit, Void, Unit>() {
+        override fun doInBackground(vararg params: Unit?){
+            val jsch = JSch()
+            val session = jsch.getSession(USERNAME, HOSTNAME, PORT)
+            session.setConfig("StrictHostKeyChecking", "no")
+            session.setPassword(PASSWORD)
+            session.timeout = 100000
+            session.connect()
+            session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
         }
     }
 
-    class ReceivePhotoTask: AsyncTask<Void, Void, Bitmap>() {
-        override fun doInBackground(vararg params: Void?): Bitmap {
-            val inputStream = getInputStream()
-            val buffer = ByteArray(BUFFER_SIZE)
-            val imageSize = receiveHeader(inputStream, buffer)
-            val imageBytes = ByteArray(imageSize)
-            for (i in HEADER_SIZE until BUFFER_SIZE)
-                imageBytes[i - HEADER_SIZE] = buffer[i]
-
-            var received = BUFFER_SIZE
-            while (received < imageBytes.size) {
-                inputStream.read(buffer, 0, BUFFER_SIZE)
-                val upTo = if (received + BUFFER_SIZE < imageSize)
-                    received + BUFFER_SIZE else imageBytes.size
-                for (i in received until upTo) {
-                    imageBytes[i] = buffer[i - received]
-                }
-                println(rceived)
-                received += BUFFER_SIZE
-            }
-            inputStream.close()
-
-            val bitmap = BitmapFactory
-                .decodeByteArray(imageBytes, 0, imageBytes.size)
-            return bitmap
-        }
-
-        private fun receiveHeader(inputStream: InputStream, buffer: ByteArray): Int {
-            inputStream.read(buffer, 0, BUFFER_SIZE)
-            return getImageSize(buffer)
-        }
-
-        private fun getInputStream(): InputStream {
-            val socket = Socket(LOCALHOST, LOCAL_PORT)
-            return  socket.getInputStream()
-        }
-
-        private fun getImageSize(imageBytes: ByteArray): Int {
-            val headerBytes = imageBytes.sliceArray(0 until HEADER_SIZE)
-            val wrapped = ByteBuffer.wrap(
-                headerBytes
-            ).order(ByteOrder.LITTLE_ENDIAN)
-            return wrapped.int
-        }
+    fun establishConnection() {
+        OpenSshTask().execute()
     }
-
-    class SendPhotoTask: AsyncTask<Photo, Void, Unit>() {
-        private val socket = Socket(LOCALHOST, LOCAL_PORT)
-
-        override fun doInBackground(vararg params: Photo?) {
-            val photo = params[0]
-            val path = photo?.path
-            val imageBytes = Files.readAllBytes(Paths.get(path))
-            val outputStream = getOutputStream()
-            sendHeader(imageBytes, outputStream)
-            outputStream.write(imageBytes)
-            outputStream.flush()
-            socket.close()
-        }
-
-        private fun getOutputStream(): OutputStream {
-            val os = socket.getOutputStream()
-            return BufferedOutputStream(os)
-        }
-
-        private fun sendHeader(imageBytes: ByteArray, outputStream: OutputStream) {
-            val header = ByteBuffer
-                .allocate(HEADER_SIZE)
-                .putInt(imageBytes.size)
-                .array()
-            outputStream.write(header)
-        }
-
-    }
-
-    init {
-        establishConnection()
-    }
-
-    private fun establishConnection() {
-        OpenSshTask().execute(this)
-
-    }
-
-    fun receivePhoto(): Bitmap {
-        return ReceivePhotoTask().execute().get()
-    }
-
-
-
 }
+
+class PhotoHandler {
+    private val client = initOkHttpClient()
+
+    private fun initOkHttpClient(): OkHttpClient {
+        return OkHttpClient().newBuilder()
+            .readTimeout(TIMEOUT, TimeUnit.SECONDS)
+            .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+            .build()
+    }
+
+
+    fun sendPhoto(photo: Photo): Bitmap {
+        val postUrl = "http://${LOCALHOST}:${LOCAL_PORT}/"
+
+        val imageBytes = getImageBytes(photo)
+
+        val filename = Paths.get(photo.path)
+            .fileName
+            .toString()
+        val postBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("image", filename,
+                RequestBody.create(MediaType.parse("image/*jpg"), imageBytes))
+            .build()
+
+        return postRequest(postUrl, postBody)
+    }
+
+    private fun getImageBytes(photo: Photo): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+        val options = BitmapFactory.Options()
+        options.inPreferredConfig = Bitmap.Config.RGB_565
+        val bitmap = BitmapFactory.decodeFile(photo.path, options)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        return outputStream.toByteArray()
+    }
+
+    private fun postRequest(postUrl: String, postBody: RequestBody): Bitmap {
+        val request = Request.Builder()
+            .url(postUrl)
+            .post(postBody)
+            .build()
+
+        val body = client.newCall(request)
+            .execute()
+            .body()
+        if (body != null) {
+            val inputStream = body.byteStream()
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            return bitmap
+        } else {
+            throw IOException()
+        }
+    }
+}
+
+

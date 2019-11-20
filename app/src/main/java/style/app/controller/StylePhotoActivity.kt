@@ -1,19 +1,16 @@
 package style.app.controller
 
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.StrictMode
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.palette.graphics.Palette
-import com.squareup.picasso.Callback
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_style_photo.*
 import style.app.R
 import style.app.model.Photo
-import style.app.model.ServerHandler
-import java.lang.Exception
-import java.util.*
+import style.app.model.PhotoHandler
+
 
 class StylePhotoActivity : AppCompatActivity() {
 
@@ -27,19 +24,18 @@ class StylePhotoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_style_photo)
 
+
+        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+
         photo = intent.getParcelableExtra(EXTRA_PHOTO)
-        val handler = ServerHandler()
-        val photo = handler.receivePhoto()
-        styled_photo.setImageBitmap(photo)
-
-        println(photo)
-    }
-
-    override fun onStart() {
-        super.onStart()
-
+        val handler = PhotoHandler()
+        runOnUiThread {
+            val bitmap = handler.sendPhoto(photo)
+            styled_photo.setImageBitmap(bitmap)
+        }
 //        Picasso.get()
-//            .load(photo.uri)
+//            .bit
 //            .placeholder(R.drawable.placeholder)
 //            .error(R.drawable.error)
 //            .resize(1000, 1000)
@@ -53,6 +49,12 @@ class StylePhotoActivity : AppCompatActivity() {
 //                override fun onError(e: Exception?) {
 //                }
 //            })
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+
     }
 
     fun onPalette(palette: Palette) {

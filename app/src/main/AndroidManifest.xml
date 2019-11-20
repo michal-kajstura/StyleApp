@@ -12,6 +12,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:name=".controller.StartupApp"
         android:theme="@style/AppTheme">
         <activity android:name=".controller.StylePhotoActivity"></activity>
         <activity android:name=".controller.GalleryActivity">
