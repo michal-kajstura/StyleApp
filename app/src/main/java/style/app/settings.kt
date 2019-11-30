@@ -1,4 +1,4 @@
-package style.app.model
+package style.app
 
 const val USERNAME = "michal.kajstura"
 const val HOSTNAME = "156.17.134.130"
@@ -10,3 +10,4 @@ const val PASSWORD = "bayaog98"
 const val HEADER_SIZE = 16
 const val BUFFER_SIZE = 1024
 const val TIMEOUT = 60L
+const val IMAGES_IN_ROW = 3

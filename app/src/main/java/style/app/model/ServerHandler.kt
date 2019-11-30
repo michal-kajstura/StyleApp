@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import com.jcraft.jsch.JSch
 import okhttp3.*
+import style.app.*
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.file.Paths
@@ -41,7 +42,7 @@ class PhotoHandler {
 
 
     fun sendPhoto(photo: Photo): Bitmap {
-        val postUrl = "http://${LOCALHOST}:${LOCAL_PORT}/"
+        val postUrl = "http://$LOCALHOST:$LOCAL_PORT/"
 
         val imageBytes = getImageBytes(photo)
 

@@ -11,9 +11,10 @@ import com.squareup.picasso.Picasso
 import style.app.R
 import style.app.model.Photo
 
-class PhotoGalleryAdapter(val context: Context, val photos: List<Photo>)
+class PhotoGalleryAdapter(val photos: List<Photo>,
+                          private val photoWidth: Int, private val photoHeight: Int,
+                          val onClickFunction: (Photo) -> Unit)
     : RecyclerView.Adapter<PhotoGalleryAdapter.PhotoViewHolder>() {
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -33,7 +34,7 @@ class PhotoGalleryAdapter(val context: Context, val photos: List<Photo>)
             .load(photo.uri)
             .placeholder(R.drawable.placeholder)
             .error(R.drawable.error)
-            .resize(500, 500)
+            .resize(photoWidth, photoHeight)
             .centerCrop()
             .into(imageView)
     }
@@ -51,14 +52,9 @@ class PhotoGalleryAdapter(val context: Context, val photos: List<Photo>)
             val position = adapterPosition
             if (position != RecyclerView.NO_POSITION) {
                 val photo = photos[position]
-                val intent = Intent(context, StylePhotoActivity::class.java).apply {
-                    putExtra(StylePhotoActivity.EXTRA_PHOTO, photo)
-                }
-                context.startActivity(intent)
+                onClickFunction(photo)
             }
         }
-
-
     }
 
 

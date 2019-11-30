@@ -36,4 +36,5 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.android.support:palette-v7:27.1.1'
     implementation group: 'com.jcraft', name: 'jsch', version: '0.1.55'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }

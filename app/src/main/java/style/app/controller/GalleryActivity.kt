@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
 import style.app.R
 import style.app.model.Photo
+import style.app.IMAGES_IN_ROW
 
 class GalleryActivity : AppCompatActivity() {
     companion object {
@@ -44,11 +45,19 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun setupGallery(photos: List<Photo>) {
-        val layoutManager = GridLayoutManager(this, 2)
+        val layoutManager = GridLayoutManager(this, IMAGES_IN_ROW)
         galleryRecyclerView = gallery
         galleryRecyclerView.setHasFixedSize(true)
         galleryRecyclerView.layoutManager = layoutManager
-        photoGalleryAdapter = PhotoGalleryAdapter(this, photos)
+        photoGalleryAdapter =
+            PhotoGalleryAdapter(photos,200, 200, this::clickPhoto)
+    }
+
+    private fun clickPhoto(photo: Photo) {
+        val intent = Intent(this, StylePhotoActivity::class.java).apply {
+            putExtra(StylePhotoActivity.EXTRA_PHOTO, photo)
+        }
+        startActivity(intent)
     }
 
     override fun onStart() {
@@ -66,7 +75,7 @@ class GalleryActivity : AppCompatActivity() {
         }
     }
 
-    fun getImagesFromGallery(): List<Photo> {
+    private fun getImagesFromGallery(): List<Photo> {
         val externalUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val orderBy = MediaStore.Images.Media.DATE_ADDED + " DESC"
         val columns = arrayOf(
