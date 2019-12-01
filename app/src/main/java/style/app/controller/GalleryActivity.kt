@@ -5,32 +5,33 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
-import style.app.R
-import style.app.model.Photo
 import style.app.IMAGES_IN_ROW
+import style.app.R
+import style.app.data.ImageProvider
+import style.app.model.Photo
 
 class GalleryActivity : AppCompatActivity() {
     companion object {
         const val REQUEST_IMAGE_CAPTURE = 0
     }
-    private lateinit var galleryRecyclerView: RecyclerView
-    private lateinit var photoGalleryAdapter: PhotoGalleryAdapter
+    private lateinit var gallery: RecyclerView
+    private lateinit var adapter: CustomAdapter<Photo>
+    private val imageProvider = ImageProvider(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         requestPermissions()
         openCameraFAB.setOnClickListener {takePictureIntent()}
-        val imageUris = getImagesFromGallery()
+        val imageUris = imageProvider.getAllImageFiles()
         setupGallery(imageUris)
     }
 
@@ -46,15 +47,14 @@ class GalleryActivity : AppCompatActivity() {
 
     private fun setupGallery(photos: List<Photo>) {
         val layoutManager = GridLayoutManager(this, IMAGES_IN_ROW)
-        galleryRecyclerView = gallery
-        galleryRecyclerView.setHasFixedSize(true)
-        galleryRecyclerView.layoutManager = layoutManager
-        photoGalleryAdapter =
-            PhotoGalleryAdapter(photos,200, 200, this::clickPhoto)
+        gallery = galleryRecycler
+        gallery.setHasFixedSize(true)
+        gallery.layoutManager = layoutManager
+        adapter = PhotoGalleryAdapter(this, photos, this::clickPhoto)
     }
 
     private fun clickPhoto(photo: Photo) {
-        val intent = Intent(this, StylePhotoActivity::class.java).apply {
+    val intent = Intent(this, StylePhotoActivity::class.java).apply {
             putExtra(StylePhotoActivity.EXTRA_PHOTO, photo)
         }
         startActivity(intent)
@@ -62,7 +62,7 @@ class GalleryActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        galleryRecyclerView.adapter = photoGalleryAdapter
+        gallery.adapter = adapter
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -75,37 +75,6 @@ class GalleryActivity : AppCompatActivity() {
         }
     }
 
-    private fun getImagesFromGallery(): List<Photo> {
-        val externalUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val orderBy = MediaStore.Images.Media.DATE_ADDED + " DESC"
-        val columns = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DATA
-        )
-        val cursor = contentResolver.query(
-            externalUri,
-            columns,
-            null,
-            null,
-            orderBy
-        )
-
-        val images = mutableListOf<Photo>()
-        if (cursor != null) {
-            cursor.moveToFirst()
-            val dataColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val pathColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-            while (cursor.moveToNext()) {
-                val imageId = cursor.getLong(dataColumnIndex)
-                val path = cursor.getString(pathColumnIndex)
-                val imageUri = Uri.withAppendedPath(externalUri, "" + imageId)
-                val image = Photo(imageUri, path)
-                images.add(image)
-            }
-            cursor.close()
-        }
-        return images
-    }
 
     private fun requestPermissions() {
         val permissions = listOf(
@@ -126,12 +95,7 @@ class PermissionManager(private val activity: Activity,
         val notGranted = findDeniedPermissions()
         if (notGranted.isNotEmpty())
             requestPermissons(notGranted)
-    }
 
-    private fun somePermissionsNotGranted(): Boolean {
-        return requestedPermissions.any {
-            p -> ContextCompat.checkSelfPermission(activity, p) == PackageManager.PERMISSION_DENIED
-        }
     }
 
     private fun findDeniedPermissions(): List<String> {

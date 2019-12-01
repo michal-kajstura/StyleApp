@@ -1,7 +1,7 @@
 package style.app.controller
 
 import android.content.Context
-import android.content.Intent
+import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +11,9 @@ import com.squareup.picasso.Picasso
 import style.app.R
 import style.app.model.Photo
 
-class PhotoGalleryAdapter(val photos: List<Photo>,
-                          private val photoWidth: Int, private val photoHeight: Int,
-                          val onClickFunction: (Photo) -> Unit)
-    : RecyclerView.Adapter<PhotoGalleryAdapter.PhotoViewHolder>() {
+abstract class CustomAdapter<T>(protected val context: Context,
+                                val photos: List<T>, val onClickFn: (T) -> Unit)
+    : RecyclerView.Adapter<CustomAdapter<T>.PhotoViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -30,14 +29,11 @@ class PhotoGalleryAdapter(val photos: List<Photo>,
         val photo = photos[position]
         val imageView = holder.photoImageView
 
-        Picasso.get()
-            .load(photo.uri)
-            .placeholder(R.drawable.placeholder)
-            .error(R.drawable.error)
-            .resize(photoWidth, photoHeight)
-            .centerCrop()
-            .into(imageView)
+        loadInto(photo, imageView)
+
     }
+
+    abstract fun loadInto(image: T, imageView: ImageView)
 
     inner class PhotoViewHolder(itemView: View)
         : RecyclerView.ViewHolder(itemView), View.OnClickListener {
@@ -52,10 +48,31 @@ class PhotoGalleryAdapter(val photos: List<Photo>,
             val position = adapterPosition
             if (position != RecyclerView.NO_POSITION) {
                 val photo = photos[position]
-                onClickFunction(photo)
+                onClickFn(photo)
             }
         }
     }
+}
+
+class PhotoGalleryAdapter(context_: Context, photos_: List<Photo>, fn_: (Photo) -> Unit)
+    : CustomAdapter<Photo>(context_, photos_, fn_) {
+
+    override fun loadInto(image: Photo, imageView: ImageView) {
+        Picasso.get()
+            .load(image.uri)
+            .placeholder(R.drawable.placeholder)
+            .error(R.drawable.error)
+            .resize(500, 500)
+            .centerCrop()
+            .into(imageView)
+    }
+}
 
 
+class StyleBarAdaper(context_: Context, photos_: List<Bitmap>, fn_: (Bitmap) -> Unit)
+    : CustomAdapter<Bitmap>(context_, photos_, fn_) {
+
+    override fun loadInto(image: Bitmap, imageView: ImageView) {
+        imageView.setImageBitmap(image)
+    }
 }
