@@ -11,3 +11,4 @@ const val HEADER_SIZE = 16
 const val BUFFER_SIZE = 1024
 const val TIMEOUT = 60L
 const val IMAGES_IN_ROW = 3
+const val SERVER_URL = "http://$LOCALHOST:$LOCAL_PORT/"

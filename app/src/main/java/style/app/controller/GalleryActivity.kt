@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.style_item.*
 import style.app.IMAGES_IN_ROW
 import style.app.R
 import style.app.data.ImageProvider
@@ -23,7 +24,7 @@ class GalleryActivity : AppCompatActivity() {
         const val REQUEST_IMAGE_CAPTURE = 0
     }
     private lateinit var gallery: RecyclerView
-    private lateinit var adapter: CustomAdapter<Photo>
+    private lateinit var adapter: CustomAdapter
     private val imageProvider = ImageProvider(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +51,8 @@ class GalleryActivity : AppCompatActivity() {
         gallery = galleryRecycler
         gallery.setHasFixedSize(true)
         gallery.layoutManager = layoutManager
-        adapter = PhotoGalleryAdapter(this, photos, this::clickPhoto)
+        adapter = CustomAdapter(this, photos,
+            this::clickPhoto, 500, 500)
     }
 
     private fun clickPhoto(photo: Photo) {

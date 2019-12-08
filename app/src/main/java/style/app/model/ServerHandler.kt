@@ -3,25 +3,24 @@ package style.app.model
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.AsyncTask
-import android.os.Environment
-import android.provider.MediaStore
-import androidx.palette.graphics.Palette
 import com.jcraft.jsch.JSch
-import com.squareup.picasso.Picasso
 import okhttp3.*
 import style.app.*
-import java.io.*
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
-import java.util.zip.ZipEntry
+import java.util.stream.Collectors
+import java.util.zip.ZipException
 import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 
 class ConnectionHandler {
+    val httpClient = initOkHttpClient()
 
     class OpenSshTask: AsyncTask<Unit, Void, Unit>() {
         override fun doInBackground(vararg params: Unit?){
@@ -38,66 +37,21 @@ class ConnectionHandler {
     fun establishConnection() {
         OpenSshTask().execute()
     }
-}
 
-class PhotoHandler(private val context: Context) {
-    private val TEMP_ZIP_FILENAME = "temp.zip"
-    private val client = initOkHttpClient()
-    private val serverUrl = "http://$LOCALHOST:$LOCAL_PORT/"
-
-    private fun initOkHttpClient(): OkHttpClient {
+     private fun initOkHttpClient(): OkHttpClient {
         return OkHttpClient().newBuilder()
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
             .build()
     }
+}
 
-    fun fetchStyles(): List<Photo> {
-        val url = serverUrl + "styles"
-        val request = Request.Builder()
-            .url(url)
-            .build()
-        val responseBody = client.newCall(request)
-            .execute()
-            .body()
-        val zipBytes = responseBody?.bytes()
-        val tempFilePath = context.getExternalFilesDir(null)
+class PhotoHandler(private val context: Context,
+                   private val client: OkHttpClient) {
 
-        tempFilePath?.let {
-            zipBytes?.let {
-                val zipfile = saveTempZipFile(zipBytes, tempFilePath)
-                return unzipPhotos(zipfile, tempFilePath)
-            }
-        }
-        return emptyList()
-        }
-
-    private fun saveTempZipFile(zipBytes: ByteArray, tempFilePath: File): ZipFile {
-        val tempFile = File(tempFilePath, TEMP_ZIP_FILENAME)
-        val os = FileOutputStream(tempFile)
-        os.write(zipBytes)
-        return ZipFile(tempFile)
-    }
-
-    private fun unzipPhotos(zipfile: ZipFile, tempFilePath: File): List<Photo> {
-        val stylePhotos = arrayListOf<Photo>()
-        for (entry in zipfile.entries()) {
-            val inputStream = zipfile.getInputStream(entry)
-            val result = BitmapFactory.decodeStream(inputStream)
-            val file = File(tempFilePath, entry.name)
-            FileOutputStream(file).use {
-                result.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
-            val photo = Photo(Uri.fromFile(file), file.absolutePath)
-            stylePhotos.add(photo)
-
-        }
-        return stylePhotos
-    }
-
-    fun sendPhoto(photo: Photo): Bitmap {
+    fun sendPhoto(photo: Photo, stylePhoto: Photo): Bitmap {
         val imageBytes = getImageBytes(photo)
-
+        val title = stylePhoto.path?.split("/")?.last()
         val path = photo.uri?.path
         val filename = Paths.get(path)
                 .fileName
@@ -106,7 +60,7 @@ class PhotoHandler(private val context: Context) {
             .setType(MultipartBody.FORM)
             .addFormDataPart("image", filename,
                 RequestBody.create(MediaType.parse("image/*jpg"), imageBytes))
-            .build()
+            .addFormDataPart("style", title) .build()
 
         return postPhoto(postBody)
     }
@@ -126,7 +80,7 @@ class PhotoHandler(private val context: Context) {
     }
 
     private fun postPhoto(postBody: RequestBody): Bitmap {
-        val postUrl = serverUrl + "transfer"
+        val postUrl = SERVER_URL + "transfer"
         val request = Request.Builder()
             .url(postUrl)
             .post(postBody)
@@ -145,4 +99,95 @@ class PhotoHandler(private val context: Context) {
     }
 }
 
+class ImagesFetcher(private val client: OkHttpClient,
+                    private val tempFilePath: File?) {
+    private val TEMP_ZIP_FILENAME = "temp.zip"
 
+     fun fetchStyles(): List<Photo> {
+        val styleImagesPaths = listStylesDir()
+        val stylePathsOneString = styleImagesPaths.joinToString (separator = "\n") {
+                s -> s.split("/").last()
+        }
+
+
+        val requestUrl = SERVER_URL + "styles"
+        val postBody = MultipartBody.Builder()
+           .setType(MultipartBody.FORM)
+           .addFormDataPart("image_list", stylePathsOneString) .build()
+
+        val request = Request.Builder()
+            .url(requestUrl)
+            .post(postBody)
+            .build()
+
+        val responseBody = client.newCall(request)
+            .execute()
+            .body()
+        val zipBytes = responseBody?.bytes()
+
+        tempFilePath?.let {
+            zipBytes?.let {
+                saveTempZipFile(zipBytes, tempFilePath)
+                unzipPhotos(tempFilePath)
+                return getAllStylePhotos()
+            }
+        }
+        return emptyList() }
+
+    private fun getAllStylePhotos(): List<Photo> {
+        val imagePaths = listStylesDir()
+        val files = imagePaths.map {pth -> File(pth)}
+        return files.map {
+            f -> Photo(Uri.fromFile(f), f.absolutePath)
+        }
+    }
+
+    private fun saveTempZipFile(zipBytes: ByteArray, tempFilePath: File) {
+        val tempFile = getTempFileZipPath(tempFilePath)
+        val os = FileOutputStream(tempFile)
+        os.write(zipBytes)
+    }
+
+    private fun getTempFileZipPath(tempFilePath: File): File {
+        return File(tempFilePath, TEMP_ZIP_FILENAME)
+    }
+
+    private fun unzipPhotos(tempFilePath: File) {
+        val zipPath= getTempFileZipPath(tempFilePath)
+        try {
+            val zipFile = ZipFile(zipPath)
+            unzip(zipFile)
+        } catch (ex: ZipException) {
+            // Catch if zipFile is empty (no new images were sent)
+            return
+        }
+
+    }
+
+    private fun unzip(zipFile: ZipFile) {
+        for (entry in zipFile.entries()) {
+            val inputStream = zipFile.getInputStream(entry)
+            val result = BitmapFactory.decodeStream(inputStream)
+            val filename = entry.name.split("/")[1]
+            val file = File(tempFilePath, "styles/${filename}")
+            FileOutputStream(file).use {
+                result.compress(Bitmap.CompressFormat.PNG, 100, it)
+           }
+        }
+    }
+
+    private fun listStylesDir(): List<String> {
+        val directory = File(tempFilePath, "styles")
+        if (! directory.exists()) {
+            directory.mkdir()
+        }
+        val files = Files.walk(directory.toPath())
+        val result = files
+            .filter{f -> Files.isRegularFile(f)}
+            .map { x -> x.toString() }
+            .collect(Collectors.toList())
+        return result
+
+    }
+
+}
