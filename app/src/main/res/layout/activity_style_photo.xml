@@ -6,11 +6,12 @@
     android:layout_height="match_parent"
     tools:context=".controller.StylePhotoActivity">
 
-    <ImageView
+    <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/styled_photo"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:adjustViewBounds="true"
+        android:background="@android:color/black"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toTopOf="@+id/styleBar"
         app:layout_constraintEnd_toEndOf="parent"
@@ -21,8 +22,9 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/styleBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="412dp"
+        android:layout_height="145dp"
+        android:background="@android:color/black"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

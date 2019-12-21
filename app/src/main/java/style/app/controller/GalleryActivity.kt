@@ -13,11 +13,12 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.style_item.*
 import style.app.IMAGES_IN_ROW
 import style.app.R
 import style.app.data.ImageProvider
 import style.app.model.Photo
+import java.io.File
+import java.io.FileOutputStream
 
 class GalleryActivity : AppCompatActivity() {
     companion object {
@@ -51,8 +52,8 @@ class GalleryActivity : AppCompatActivity() {
         gallery = galleryRecycler
         gallery.setHasFixedSize(true)
         gallery.layoutManager = layoutManager
-        adapter = CustomAdapter(this, photos,
-            this::clickPhoto, 500, 500)
+        adapter = CustomAdapter( photos, this::clickPhoto, 500, 500,
+            R.layout.gallery_item)
     }
 
     private fun clickPhoto(photo: Photo) {
@@ -70,6 +71,14 @@ class GalleryActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             val imageBitmap = data?.extras?.get("data") as Bitmap
+            val file = File(getExternalFilesDir(null), "temp.png")
+            FileOutputStream(file).use {
+                imageBitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+//            val photo = Photo(file.toURI(), file.absolutePath)
+
+
+
             val intent = Intent(this, StylePhotoActivity::class.java).apply {
                 putExtra(StylePhotoActivity.EXTRA_PHOTO, imageBitmap)
             }

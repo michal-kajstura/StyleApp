@@ -1,7 +1,7 @@
 package style.app.controller
 
 import android.app.Application
-import style.app.model.ConnectionHandler
+import style.app.network.ConnectionHandler
 
 class StartupApp: Application() {
     override fun onCreate() {

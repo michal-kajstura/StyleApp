@@ -10,16 +10,16 @@ import com.squareup.picasso.Picasso
 import style.app.R
 import style.app.model.Photo
 
-class CustomAdapter(private val context: Context,
-                    private val photos: List<Photo>,
+class CustomAdapter(private val photos: List<Photo>,
                     private val onClickFn: (Photo) -> Unit,
                     private val imageWidth: Int,
-                    private val imageHeight: Int)
+                    private val imageHeight: Int,
+                    private val item: Int)
     : RecyclerView.Adapter<CustomAdapter.PhotoViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
-        val photoView = inflater.inflate(R.layout.style_item, parent, false)
+        val photoView = inflater.inflate(item, parent, false)
         return PhotoViewHolder(photoView)
     }
 
