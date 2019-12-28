@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        key="port"
+        android:title="port"
+        android:summary="Port number"
+        android:defaultValue="16006"/>
+
+</PreferenceScreen>

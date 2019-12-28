@@ -6,8 +6,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 
-fun saveBitmap(bmp: Bitmap, filename: String, external: File): File {
-    val file = File(external, filename)
+fun saveBitmap(bmp: Bitmap, file: File) {
     try {
         if (!file.exists())
             file.createNewFile()
@@ -17,6 +16,5 @@ fun saveBitmap(bmp: Bitmap, filename: String, external: File): File {
     } catch (e: IOException) {
         e.printStackTrace()
     }
-    return file
 }
 

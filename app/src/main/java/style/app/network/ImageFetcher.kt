@@ -2,7 +2,6 @@ package style.app.network
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -54,8 +53,7 @@ class ImagesFetcher(private val client: OkHttpClient,
         val imagePaths = listStylesDir()
         val files = imagePaths.map {pth -> File(pth) }
         return files.map {
-            f ->
-            Photo(Uri.fromFile(f), f.absolutePath)
+            f -> Photo(f)
         }
     }
 

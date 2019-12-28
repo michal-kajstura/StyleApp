@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".controller.StylePhotoActivity">
+    tools:context=".controller.StyleActivity">
 
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/styled_photo"
@@ -20,11 +20,25 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/placeholder" />
 
+    <com.github.ybq.android.spinkit.SpinKitView
+        android:id="@+id/loading_animation"
+        style="@style/SpinKitView.Large.Circle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:SpinKit_Color="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@+id/styleBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/styled_photo" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/styleBar"
         android:layout_width="412dp"
-        android:layout_height="145dp"
+        android:layout_height="wrap_content"
         android:background="@android:color/black"
+        android:foregroundGravity="bottom"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

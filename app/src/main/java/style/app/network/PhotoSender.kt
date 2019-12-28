@@ -16,11 +16,14 @@ class PhotoSender(private val context: Context,
 
     fun sendPhoto(photo: Photo, stylePhoto: Photo): Bitmap {
         val imageBytes = getImageBytes(photo)
-        val title = stylePhoto.path?.split("/")?.last()
-        val path = photo.uri?.path
-        val filename = Paths.get(path)
+        val title = stylePhoto.path
+            .split("/")
+            .last()
+
+        val filename = Paths.get(photo.path)
                 .fileName
                 .toString()
+
         val postBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("image", filename,
@@ -31,10 +34,6 @@ class PhotoSender(private val context: Context,
     }
 
     private fun getImageBytes(photo: Photo): ByteArray {
-        val uri = photo.uri
-        if (uri == null)
-            return byteArrayOf()
-
         val inputStream = context.contentResolver.openInputStream(photo.uri)
         val outputStream = ByteArrayOutputStream()
         val options = BitmapFactory.Options()
@@ -54,6 +53,7 @@ class PhotoSender(private val context: Context,
         val body = client.newCall(request)
             .execute()
             .body()
+
         if (body != null) {
             val inputStream = body.byteStream()
             val bitmap = BitmapFactory.decodeStream(inputStream)

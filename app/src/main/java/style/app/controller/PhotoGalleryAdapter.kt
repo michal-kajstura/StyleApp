@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
 import style.app.R
 import style.app.model.Photo

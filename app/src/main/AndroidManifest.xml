@@ -8,14 +8,18 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
+        android:name=".controller.StartupApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".controller.StartupApp"
         android:theme="@style/AppTheme">
-        <activity android:name=".controller.StylePhotoActivity"></activity>
+        <activity
+            android:name=".controller.SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity android:name=".controller.StyleActivity" />
         <activity android:name=".controller.GalleryActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

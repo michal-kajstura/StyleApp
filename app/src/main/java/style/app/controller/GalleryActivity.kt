@@ -31,6 +31,8 @@ class GalleryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setSupportActionBar(toolbar)
+        toolbar.title = ""
         requestPermissions()
         openCameraFAB.setOnClickListener {takePictureIntent()}
         val imageUris = imageProvider.getAllImageFiles()
@@ -57,8 +59,8 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun clickPhoto(photo: Photo) {
-    val intent = Intent(this, StylePhotoActivity::class.java).apply {
-            putExtra(StylePhotoActivity.EXTRA_PHOTO, photo)
+    val intent = Intent(this, StyleActivity::class.java).apply {
+            putExtra(StyleActivity.EXTRA_PHOTO, photo)
         }
         startActivity(intent)
     }
@@ -79,8 +81,8 @@ class GalleryActivity : AppCompatActivity() {
 
 
 
-            val intent = Intent(this, StylePhotoActivity::class.java).apply {
-                putExtra(StylePhotoActivity.EXTRA_PHOTO, imageBitmap)
+            val intent = Intent(this, StyleActivity::class.java).apply {
+                putExtra(StyleActivity.EXTRA_PHOTO, imageBitmap)
             }
             startActivity(intent)
         }
