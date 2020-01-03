@@ -2,27 +2,44 @@ package style.app.network
 
 import android.os.AsyncTask
 import com.jcraft.jsch.JSch
+import com.jcraft.jsch.JSchException
+import com.jcraft.jsch.Session
 import okhttp3.OkHttpClient
 import style.app.*
 import java.util.concurrent.TimeUnit
 
-class ConnectionHandler {
-    val httpClient = initOkHttpClient()
 
-    class OpenSshTask: AsyncTask<Unit, Void, Unit>() {
-        override fun doInBackground(vararg params: Unit?){
+object ConnectionHandler {
+    val httpClient = initOkHttpClient()
+    lateinit var session: Session
+    var connected = false
+
+    class OpenSshTask: AsyncTask<Int, Void, Boolean>() {
+        override fun doInBackground(vararg params: Int?): Boolean {
+            val port = params[0]!!
             val jsch = JSch()
-            val session = jsch.getSession(USERNAME, HOSTNAME, PORT)
+            session = jsch.getSession(USERNAME, HOSTNAME, port)
             session.setConfig("StrictHostKeyChecking", "no")
             session.setPassword(PASSWORD)
             session.timeout = 100000
-            session.connect()
-            session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
+
+            try {
+                session.connect()
+                session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
+                return true
+            } catch (e: JSchException) {
+                return false
+            }
         }
     }
 
-    fun establishConnection() {
-        OpenSshTask().execute()
+    fun establishConnection(port: Int): Boolean {
+        return OpenSshTask().execute(port).get()
+    }
+
+    fun deleteConnection() {
+        session.delPortForwardingL(LOCAL_PORT)
+        connected = false
     }
 
      private fun initOkHttpClient(): OkHttpClient {

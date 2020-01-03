@@ -3,7 +3,6 @@ package style.app.network
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import style.app.SERVER_URL
 import style.app.TEMP_ZIP_FILENAME
@@ -15,8 +14,7 @@ import java.util.stream.Collectors
 import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
-class ImagesFetcher(private val client: OkHttpClient,
-                    private val tempFilePath: File?) {
+class ImagesFetcher(private val tempFilePath: File?) {
 
      fun fetchStyles(): List<Photo> {
         val styleImagesPaths = listStylesDir()
@@ -35,7 +33,8 @@ class ImagesFetcher(private val client: OkHttpClient,
             .post(postBody)
             .build()
 
-        val responseBody = client.newCall(request)
+        val responseBody = ConnectionHandler.httpClient
+            .newCall(request)
             .execute()
             .body()
         val zipBytes = responseBody?.bytes()

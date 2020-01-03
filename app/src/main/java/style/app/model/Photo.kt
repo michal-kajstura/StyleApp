@@ -38,6 +38,13 @@ data class Photo(var file: File) : Parcelable {
 
     val path: String = file.absolutePath
 
+    val name: String = splitName()
+
+    private fun splitName(): String {
+        val split = path.split("/").last().split(".")
+        return split[split.lastIndex - 1]
+    }
+
     private fun getCameraPhotoOrientation(): Float{
         var rotate = 0.0F
         try {

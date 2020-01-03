@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -31,12 +33,31 @@ class GalleryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
-        toolbar.title = ""
+
         requestPermissions()
         openCameraFAB.setOnClickListener {takePictureIntent()}
         val imageUris = imageProvider.getAllImageFiles()
         setupGallery(imageUris)
+
+        galllery_settings_fab.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.action_settings -> {
+
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     private fun takePictureIntent() {
@@ -71,18 +92,17 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             val imageBitmap = data?.extras?.get("data") as Bitmap
             val file = File(getExternalFilesDir(null), "temp.png")
             FileOutputStream(file).use {
                 imageBitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
             }
-//            val photo = Photo(file.toURI(), file.absolutePath)
-
-
+            val photo = Photo(file)
 
             val intent = Intent(this, StyleActivity::class.java).apply {
-                putExtra(StyleActivity.EXTRA_PHOTO, imageBitmap)
+                putExtra(StyleActivity.EXTRA_PHOTO, photo)
             }
             startActivity(intent)
         }

@@ -3,9 +3,17 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <EditTextPreference
-        key="port"
-        android:title="port"
-        android:summary="Port number"
-        android:defaultValue="16006"/>
+        android:defaultValue="16006"
+        android:dialogTitle="Port number"
+        android:gravity="left"
+        android:key="key_port"
+        android:persistent="true"
+        android:title="Port number" />
+
+<!--    <DropDownPreference-->
+<!--        android:key="key_quality"-->
+<!--        android:entries="@array/qualityValues"-->
+<!--        android:title="Image quality"-->
+<!--        android:defaultValue="Medium" />-->
 
 </PreferenceScreen>

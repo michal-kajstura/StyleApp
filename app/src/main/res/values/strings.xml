@@ -4,4 +4,12 @@
     <string name="settings_tab">Settings</string>
     <string name="permission_toast">All necessary permissions are granted</string>
     <string name="title_activity_settings">SettingsActivity</string>
+    <string name="action_settings">Settings</string>
+
+    <string-array name="qualityValues">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+        <item>Best</item>
+    </string-array>
 </resources>

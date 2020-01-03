@@ -14,7 +14,7 @@ class PhotoSender(private val context: Context,
                   private val client: OkHttpClient
 ) {
 
-    fun sendPhoto(photo: Photo, stylePhoto: Photo): Bitmap {
+    fun send(photo: Photo, stylePhoto: Photo, sendPhoto: Boolean): Bitmap {
         val imageBytes = getImageBytes(photo)
         val title = stylePhoto.path
             .split("/")
@@ -24,13 +24,16 @@ class PhotoSender(private val context: Context,
                 .fileName
                 .toString()
 
-        val postBody = MultipartBody.Builder()
+        var postBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("image", filename,
-                RequestBody.create(MediaType.parse("image/*jpg"), imageBytes))
-            .addFormDataPart("style", title) .build()
+            .addFormDataPart("style", title)
 
-        return postPhoto(postBody)
+        if (sendPhoto)
+            postBuilder = postBuilder.addFormDataPart("image", filename,
+                                RequestBody.create(MediaType.parse("image/*jpg"), imageBytes))
+
+
+        return postPhoto(postBuilder.build())
     }
 
     private fun getImageBytes(photo: Photo): ByteArray {
@@ -39,7 +42,7 @@ class PhotoSender(private val context: Context,
         val options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.RGB_565
         val bitmap = BitmapFactory.decodeStream(inputStream)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
         return outputStream.toByteArray()
     }
 

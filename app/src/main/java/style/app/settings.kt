@@ -3,7 +3,7 @@ package style.app
 const val USERNAME = "root"
 const val HOSTNAME = "0.tcp.ngrok.io"
 const val LOCALHOST = "localhost"
-const val PORT = 13369
+const val PORT = 11309
 const val LOCAL_PORT = 16006
 const val REMOTE_PORT = 16006
 const val PASSWORD = "pam"
