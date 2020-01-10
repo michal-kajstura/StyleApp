@@ -2,25 +2,34 @@ package style.app.controller
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.InputType
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.port_dialog.*
 import style.app.IMAGES_IN_ROW
 import style.app.R
 import style.app.data.ImageProvider
 import style.app.model.Photo
+import style.app.network.ConnectionHandler
 import java.io.File
 import java.io.FileOutputStream
+
 
 class GalleryActivity : AppCompatActivity() {
     companion object {
@@ -39,10 +48,6 @@ class GalleryActivity : AppCompatActivity() {
         val imageUris = imageProvider.getAllImageFiles()
         setupGallery(imageUris)
 
-        galllery_settings_fab.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -80,10 +85,41 @@ class GalleryActivity : AppCompatActivity() {
     }
 
     private fun clickPhoto(photo: Photo) {
-    val intent = Intent(this, StyleActivity::class.java).apply {
-            putExtra(StyleActivity.EXTRA_PHOTO, photo)
+        if (!ConnectionHandler.connected) {
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+            val port = sharedPreferences.getString("port_key", "")
+            if (!port.isNullOrEmpty()) {
+                val connected = ConnectionHandler.establishConnection(port.toInt())
+                if (connected)
+                    return
+            }
+            askForPortNumber()
+            return
         }
+
+        val intent = Intent(this, StyleActivity::class.java).apply {
+                putExtra(StyleActivity.EXTRA_PHOTO, photo)
+            }
         startActivity(intent)
+    }
+
+    private fun askForPortNumber() {
+            val view = LayoutInflater.from(
+                this@GalleryActivity).inflate(R.layout.port_dialog, null)
+            AlertDialog.Builder(this@GalleryActivity)
+                .setView(view)
+                .setPositiveButton(
+                    "OK") {
+                        _, _ ->
+                            val inputEditText = view.findViewById<EditText>(R.id.port_edit_text)
+                            val portNumber = inputEditText.text.toString()
+                            ConnectionHandler.establishConnection(portNumber.toInt())
+                            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+                            sharedPreferences.edit()
+                                .putString("port_key", portNumber)
+                                .apply()
+                    }
+                .show()
     }
 
     override fun onStart() {

@@ -5,6 +5,7 @@
     <string name="permission_toast">All necessary permissions are granted</string>
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="action_settings">Settings</string>
+    <string name="port_message">Please enter correct port number</string>
 
     <string-array name="qualityValues">
         <item>Low</item>

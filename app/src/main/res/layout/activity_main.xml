@@ -36,13 +36,4 @@
         app:srcCompat="@android:drawable/ic_menu_camera"
         app:useCompatPadding="false" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/galllery_settings_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/openCameraFAB"
-        app:srcCompat="@android:drawable/ic_menu_set_as" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

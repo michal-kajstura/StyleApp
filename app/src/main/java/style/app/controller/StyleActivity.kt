@@ -2,13 +2,11 @@ package style.app.controller
 
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.AsyncTask
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
@@ -18,12 +16,11 @@ import style.app.R
 import style.app.TEMP_PHOTO_FILENAME
 import style.app.model.Photo
 import style.app.model.saveBitmap
+import style.app.model.saveImage
 import style.app.network.ConnectionHandler
 import style.app.network.ImagesFetcher
 import style.app.network.PhotoSender
 import java.io.File
-import java.io.FileOutputStream
-import java.net.PortUnreachableException
 
 
 class StyleActivity : AppCompatActivity() {
@@ -35,7 +32,6 @@ class StyleActivity : AppCompatActivity() {
     private lateinit var originalPhoto: Photo
     private lateinit var styledPhoto: Photo
     private lateinit var adapter: CustomAdapter
-    private lateinit var sharedPreferences: SharedPreferences
     private val fetchTask: FetchStylesTask = FetchStylesTask()
     private val photoHandler = PhotoSender(this, ConnectionHandler.httpClient)
     private var sendPhoto = true
@@ -45,18 +41,10 @@ class StyleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_style_photo)
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-        if (!ConnectionHandler.connected) {
-            connectToServer()
-        }
         assignPhoto()
         setupStyleBar()
 
         save_fab.setOnClickListener {savePhoto()}
-        settings_fab.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)}
     }
 
     private fun assignPhoto() {
@@ -68,29 +56,16 @@ class StyleActivity : AppCompatActivity() {
             throw NoPhotoException()
     }
 
-    private fun connectToServer() {
-        val port = sharedPreferences.getString("key_port", "")
-        if (port.isNullOrEmpty()) {
-            throw PortUnreachableException()
-        }
-        ConnectionHandler.establishConnection(port.toInt())
-    }
-
     private fun savePhoto() {
         val storageDir = File(
             externalMediaDirs.first(),
             "styled_images"
         )
-        if (!storageDir.exists())
-            storageDir.mkdirs()
 
-        val image = File(storageDir, name + "_t.png")
-
-        val fos = FileOutputStream(image)
-        val bitmap = BitmapFactory.decodeFile(styledPhoto.path)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-        fos.flush()
-        fos.close()
+        if (::styledPhoto.isInitialized) {
+            saveImage(styledPhoto, name, storageDir)
+        }
+            Toast.makeText(this, "Image saved", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupStyleBar() {
@@ -115,11 +90,6 @@ class StyleActivity : AppCompatActivity() {
             .rotate(rotation)
             .centerInside()
             .into(styled_photo)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        ConnectionHandler.deleteConnection()
     }
 
     inner class FetchStylesTask: AsyncTask<Unit, Void, List<Photo>>() {

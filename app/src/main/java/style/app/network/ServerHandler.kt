@@ -26,8 +26,10 @@ object ConnectionHandler {
             try {
                 session.connect()
                 session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
+                connected = true
                 return true
             } catch (e: JSchException) {
+                connected = false
                 return false
             }
         }

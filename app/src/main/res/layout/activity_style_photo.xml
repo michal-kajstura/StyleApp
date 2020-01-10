@@ -46,13 +46,6 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/settings_fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            app:srcCompat="@android:drawable/stat_sys_headset" />
-
         <Space
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -63,6 +56,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="true"
+            android:backgroundTint="@android:color/white"
+            android:tint="@color/colorPrimaryDark"
+            app:borderWidth="0px"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/galleryRecycler"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
+            app:rippleColor="#00B9B9B9"
             app:srcCompat="@android:drawable/stat_sys_download" />
 
         <Space
