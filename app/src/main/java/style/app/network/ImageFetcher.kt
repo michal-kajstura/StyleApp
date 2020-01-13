@@ -22,11 +22,10 @@ class ImagesFetcher(private val tempFilePath: File?) {
                 s -> s.split("/").last()
         }
 
-
         val requestUrl = SERVER_URL + "styles"
         val postBody = MultipartBody.Builder()
            .setType(MultipartBody.FORM)
-           .addFormDataPart("image_list", stylePathsOneString) .build()
+           .addFormDataPart("image_list", stylePathsOneString).build()
 
         val request = Request.Builder()
             .url(requestUrl)

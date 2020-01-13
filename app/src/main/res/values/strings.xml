@@ -2,6 +2,7 @@
     <string name="app_name">StyleApp</string>
     <string name="gallery_tab">Gallery</string>
     <string name="settings_tab">Settings</string>
+    <string name="save_photo">Save photo</string>
     <string name="permission_toast">All necessary permissions are granted</string>
     <string name="title_activity_settings">SettingsActivity</string>
     <string name="action_settings">Settings</string>
