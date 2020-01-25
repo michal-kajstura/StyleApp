@@ -1,5 +1,6 @@
 package style.app.network
 
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -7,22 +8,19 @@ import okhttp3.*
 import style.app.SERVER_URL
 import style.app.model.Photo
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
 
-class PhotoSender(private val context: Context,
+class PhotoSender(private val contentResolver: ContentResolver,
                   private val client: OkHttpClient
 ) {
 
     fun send(photo: Photo, stylePhoto: Photo, sendPhoto: Boolean): Bitmap {
         val imageBytes = getImageBytes(photo)
-        val title = stylePhoto.path
-            .split("/")
-            .last()
+        val title = stylePhoto.name
 
-        val filename = Paths.get(photo.path)
-                .fileName
-                .toString()
+        val filename = File(photo.uri.path).name
 
         var postBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -37,7 +35,7 @@ class PhotoSender(private val context: Context,
     }
 
     private fun getImageBytes(photo: Photo): ByteArray {
-        val inputStream = context.contentResolver.openInputStream(photo.uri)
+        val inputStream = contentResolver.openInputStream(photo.uri)
         val outputStream = ByteArrayOutputStream()
         val options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.RGB_565
@@ -59,8 +57,7 @@ class PhotoSender(private val context: Context,
 
         if (body != null) {
             val inputStream = body.byteStream()
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            return bitmap
+            return BitmapFactory.decodeStream(inputStream)
         } else {
             throw IOException()
         }

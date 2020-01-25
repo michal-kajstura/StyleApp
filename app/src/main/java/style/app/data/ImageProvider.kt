@@ -1,6 +1,8 @@
 package style.app.data
 
+import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import android.provider.MediaStore
 import style.app.model.Photo
 import java.io.File
@@ -11,7 +13,7 @@ class ImageProvider(private val context: Context) {
         val externalUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val orderBy = MediaStore.Images.Media.DATE_ADDED + " DESC"
         val columns = arrayOf(
-            MediaStore.Images.Media.DATA
+            MediaStore.Images.ImageColumns._ID
         )
         val cursor = context.contentResolver.query(
             externalUri,
@@ -24,11 +26,15 @@ class ImageProvider(private val context: Context) {
         val images = mutableListOf<Photo>()
         if (cursor != null) {
             cursor.moveToFirst()
-            val pathColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+//            val pathColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns._ID)
             while (cursor.moveToNext()) {
-                val path = cursor.getString(pathColumnIndex)
-                val image = Photo(File(path))
-                images.add(image)
+                val imageUri = ContentUris
+                    .withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)).toLong()
+                )
+                val photo = Photo(imageUri)
+                images.add(photo)
             }
             cursor.close()
         }

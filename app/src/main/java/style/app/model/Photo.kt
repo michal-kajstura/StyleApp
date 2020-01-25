@@ -1,20 +1,20 @@
 package style.app.model
 
+import android.content.ContentResolver
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
-import java.io.File
 import java.io.IOException
 
-data class Photo(var file: File) : Parcelable {
+data class Photo(var uri: Uri) : Parcelable {
 
     constructor(parcel: Parcel) : this(
-        File(parcel.readString()!!)
+        Uri.parse(parcel.readString())
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(file.absolutePath)
+        parcel.writeString(uri.toString())
     }
 
     override fun describeContents(): Int {
@@ -29,39 +29,32 @@ data class Photo(var file: File) : Parcelable {
         override fun newArray(size: Int): Array<Photo?> {
             return arrayOfNulls(size)
         }
-
     }
-
-    val uri: Uri = Uri.fromFile(file)
-
-    val rotation: Float = getCameraPhotoOrientation()
-
-    val path: String = file.absolutePath
 
     val name: String = splitName()
 
     private fun splitName(): String {
-        val split = path.split("/").last().split(".")
-        return split[split.lastIndex - 1]
+        val splits = uri.path?.split("/")
+        if (splits != null) {
+            return splits.last()
+        }
+        throw IOException()
     }
 
-    private fun getCameraPhotoOrientation(): Float{
-        var rotate = 0.0F
-        try {
-            val exif = ExifInterface(file.absolutePath)
-            val orientation = exif.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL
-            )
-            when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_270 -> rotate = 270.0F
-                ExifInterface.ORIENTATION_ROTATE_180 -> rotate = 180.0F
-                ExifInterface.ORIENTATION_ROTATE_90 -> rotate = 90.0F
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
+    fun getRotation(contentResolver: ContentResolver): Float{
+        var rotation = 0.0F
+        val inputStream = contentResolver.openInputStream(uri)
+        val exif = ExifInterface(inputStream)
+        val orientation = exif.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotation = 270.0F
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotation = 180.0F
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotation = 90.0F
         }
 
-        return rotate
+        return rotation
     }
 }

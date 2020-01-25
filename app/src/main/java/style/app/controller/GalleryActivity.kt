@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.net.toFile
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -54,7 +53,8 @@ class GalleryActivity : AppCompatActivity() {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
             takePictureIntent.resolveActivity(packageManager)?.also {
                 val takenPhotoFile = createImageFile()
-                takenPhotoUri = Uri.fromFile(takenPhotoFile)
+                takenPhotoUri = FileProvider.getUriForFile(this,
+                    "style.app.android.fileprovider", takenPhotoFile)
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takenPhotoUri)
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
             }
@@ -72,7 +72,7 @@ class GalleryActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            val photo = Photo(takenPhotoUri.toFile())
+            val photo = Photo(takenPhotoUri)
             val intent = Intent(this, StyleActivity::class.java).apply {
                 putExtra(StyleActivity.EXTRA_PHOTO, photo)
             }
@@ -87,7 +87,7 @@ class GalleryActivity : AppCompatActivity() {
         gallery.setHasFixedSize(true)
         gallery.layoutManager = layoutManager
         adapter = CustomAdapter( photos, this::clickPhoto, 500, 500,
-            R.layout.gallery_item)
+            R.layout.gallery_item, contentResolver)
     }
 
     private fun clickPhoto(photo: Photo) {

@@ -1,5 +1,6 @@
 package style.app.controller
 
+import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.view.Menu
@@ -34,13 +35,14 @@ class StyleActivity : AppCompatActivity() {
     private lateinit var styledPhoto: Photo
     private lateinit var adapter: CustomAdapter
     private val fetchTask: FetchStylesTask = FetchStylesTask()
-    private val photoHandler = PhotoSender(this, ConnectionHandler.httpClient)
+    private lateinit var photoHandler: PhotoSender
     private var sendPhoto = true
     private var name = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        photoHandler = PhotoSender(contentResolver, ConnectionHandler.httpClient)
         setContentView(R.layout.activity_style_photo)
         assignPhoto()
         setupStyleBar()
@@ -60,7 +62,7 @@ class StyleActivity : AppCompatActivity() {
         if (photo != null) {
             originalPhoto = photo
             name = originalPhoto.name
-            fitPhoto(originalPhoto)
+            fitPhoto(originalPhoto, originalPhoto.getRotation(contentResolver))
         } else
             throw NoPhotoException()
     }
@@ -82,7 +84,7 @@ class StyleActivity : AppCompatActivity() {
         )
 
         if (::styledPhoto.isInitialized) {
-            saveImage(styledPhoto, name, storageDir)
+            saveImage(styledPhoto, name, storageDir, contentResolver)
         }
             Toast.makeText(this, "Image saved", Toast.LENGTH_SHORT).show()
     }
@@ -135,7 +137,7 @@ class StyleActivity : AppCompatActivity() {
 
             adapter = CustomAdapter(
                 result, {p -> clickStyle(p)}, 350, 350,
-                R.layout.style_item
+                R.layout.style_item, contentResolver
             )
             styleBar.adapter = adapter
             loading_animation.visibility = View.INVISIBLE
@@ -152,14 +154,11 @@ class StyleActivity : AppCompatActivity() {
 
 
         override fun doInBackground(vararg params: Photo?): Photo {
-            if (params.isEmpty() && params[0] == null)
-                return Photo(File(""))
-
             val stylePhoto = params[0]!!
             val bitmap = photoHandler.send(originalPhoto, stylePhoto, sendPhoto)
             val file = File(getExternalFilesDir(null)!!, TEMP_PHOTO_FILENAME)
             saveBitmap(bitmap, file)
-            return Photo(file)
+            return Photo(Uri.fromFile(file))
         }
 
         override fun onPostExecute(result: Photo?) {
@@ -168,7 +167,7 @@ class StyleActivity : AppCompatActivity() {
                 return
 
             styledPhoto = result
-            fitPhoto(result, originalPhoto.rotation)
+            fitPhoto(result, originalPhoto.getRotation(contentResolver))
             loading_animation.visibility = View.INVISIBLE
             styled_photo.imageAlpha = 255
             sendPhoto = false

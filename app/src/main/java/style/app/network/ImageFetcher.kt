@@ -2,6 +2,7 @@ package style.app.network
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import okhttp3.MultipartBody
 import okhttp3.Request
 import style.app.SERVER_URL
@@ -19,7 +20,7 @@ class ImagesFetcher(private val tempFilePath: File?) {
      fun fetchStyles(): List<Photo> {
         val styleImagesPaths = listStylesDir()
         val stylePathsOneString = styleImagesPaths.joinToString (separator = "\n") {
-                s -> s.split("/").last()
+                s -> s.name.split("/").last()
         }
 
         val requestUrl = SERVER_URL + "styles"
@@ -48,11 +49,8 @@ class ImagesFetcher(private val tempFilePath: File?) {
         return emptyList() }
 
     private fun getAllStylePhotos(): List<Photo> {
-        val imagePaths = listStylesDir()
-        val files = imagePaths.map {pth -> File(pth) }
-        return files.map {
-            f -> Photo(f)
-        }
+        val imageFiles = listStylesDir()
+        return imageFiles.map { f -> Photo(Uri.fromFile(f)) }
     }
 
     private fun saveTempZipFile(zipBytes: ByteArray, tempFilePath: File) {
@@ -74,7 +72,6 @@ class ImagesFetcher(private val tempFilePath: File?) {
             // Catch if zipFile is empty (no new images were sent)
             return
         }
-
     }
 
     private fun unzip(zipFile: ZipFile) {
@@ -89,18 +86,15 @@ class ImagesFetcher(private val tempFilePath: File?) {
         }
     }
 
-    private fun listStylesDir(): List<String> {
+    private fun listStylesDir(): List<File> {
         val directory = File(tempFilePath, "styles")
         if (! directory.exists()) {
             directory.mkdir()
         }
         val files = Files.walk(directory.toPath())
-        val result = files
+        return files
             .filter{f -> Files.isRegularFile(f)}
-            .map { x -> x.toString() }
+            .map{f -> f.toFile()}
             .collect(Collectors.toList())
-        return result
-
     }
-
 }

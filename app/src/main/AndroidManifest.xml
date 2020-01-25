@@ -29,7 +29,7 @@
             </intent-filter>
         </activity>
 
-        <provider
+    <provider
         android:name="androidx.core.content.FileProvider"
         android:authorities="style.app.android.fileprovider"
         android:exported="false"
