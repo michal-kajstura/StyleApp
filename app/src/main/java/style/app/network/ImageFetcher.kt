@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import okhttp3.MultipartBody
 import okhttp3.Request
-import style.app.SERVER_URL
 import style.app.TEMP_ZIP_FILENAME
 import style.app.model.Photo
 import java.io.File
@@ -23,7 +22,7 @@ class ImagesFetcher(private val tempFilePath: File?) {
                 s -> s.name.split("/").last()
         }
 
-        val requestUrl = SERVER_URL + "styles"
+        val requestUrl = ConnectionHandler.getUrl("styles")
         val postBody = MultipartBody.Builder()
            .setType(MultipartBody.FORM)
            .addFormDataPart("image_list", stylePathsOneString).build()

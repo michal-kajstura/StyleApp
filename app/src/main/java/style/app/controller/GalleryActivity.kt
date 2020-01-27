@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -33,6 +34,7 @@ class GalleryActivity : AppCompatActivity() {
     companion object {
         const val REQUEST_IMAGE_CAPTURE = 0
     }
+
     private lateinit var gallery: RecyclerView
     private lateinit var adapter: CustomAdapter
     private val imageProvider = ImageProvider(this)
@@ -43,7 +45,8 @@ class GalleryActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         requestPermissions()
-        openCameraFAB.setOnClickListener {takePictureIntent()}
+        TestConnectionTask().execute()
+        openCameraFAB.setOnClickListener { takePictureIntent() }
         val imageUris = imageProvider.getAllImageFiles()
         setupGallery(imageUris)
     }
@@ -53,8 +56,10 @@ class GalleryActivity : AppCompatActivity() {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
             takePictureIntent.resolveActivity(packageManager)?.also {
                 val takenPhotoFile = createImageFile()
-                takenPhotoUri = FileProvider.getUriForFile(this,
-                    "style.app.android.fileprovider", takenPhotoFile)
+                takenPhotoUri = FileProvider.getUriForFile(
+                    this,
+                    "style.app.android.fileprovider", takenPhotoFile
+                )
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takenPhotoUri)
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
             }
@@ -86,47 +91,20 @@ class GalleryActivity : AppCompatActivity() {
         gallery = galleryRecycler
         gallery.setHasFixedSize(true)
         gallery.layoutManager = layoutManager
-        adapter = CustomAdapter( photos, this::clickPhoto, 500, 500,
-            R.layout.gallery_item, contentResolver)
+        adapter = CustomAdapter(
+            photos, this::clickPhoto, 500, 500,
+            R.layout.gallery_item, contentResolver
+        )
     }
 
     private fun clickPhoto(photo: Photo) {
-        if (!ConnectionHandler.connected) {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-            val port = sharedPreferences.getString("port_key", "")
-            if (!port.isNullOrEmpty()) {
-                val connected = ConnectionHandler.establishConnection(port.toInt())
-                if (connected)
-                    return
-            }
-            askForPortNumber()
-            return
-        }
-
+        TestConnectionTask().execute()
         val intent = Intent(this, StyleActivity::class.java).apply {
-                putExtra(StyleActivity.EXTRA_PHOTO, photo)
-            }
+            putExtra(StyleActivity.EXTRA_PHOTO, photo)
+        }
         startActivity(intent)
     }
 
-    private fun askForPortNumber() {
-            val view = LayoutInflater.from(
-                this@GalleryActivity).inflate(R.layout.port_dialog, null)
-            AlertDialog.Builder(this@GalleryActivity)
-                .setView(view)
-                .setPositiveButton(
-                    "OK") {
-                        _, _ ->
-                            val inputEditText = view.findViewById<EditText>(R.id.port_edit_text)
-                            val portNumber = inputEditText.text.toString()
-                            ConnectionHandler.establishConnection(portNumber.toInt())
-                            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-                            sharedPreferences.edit()
-                                .putString("port_key", portNumber)
-                                .apply()
-                    }
-                .show()
-    }
 
     override fun onStart() {
         super.onStart()
@@ -142,11 +120,58 @@ class GalleryActivity : AppCompatActivity() {
         val permissionManager = PermissionManager(this, permissions, 123)
         permissionManager.checkPermissions()
     }
+
+    inner class TestConnectionTask : AsyncTask<Void, Void, Boolean>() {
+        private var ngrokSuffix = ""
+
+        override fun onPreExecute() {
+            super.onPreExecute()
+            val sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(applicationContext)
+            ngrokSuffix = sharedPreferences.getString("ngrok_suffix", "")
+            ConnectionHandler.setNgrokSuffix(ngrokSuffix)
+        }
+
+        override fun doInBackground(vararg params: Void?): Boolean {
+            return ConnectionHandler.isConnected()
+        }
+
+        override fun onPostExecute(isConnected: Boolean?) {
+            super.onPostExecute(isConnected)
+            if (isConnected == null || !isConnected) {
+                askForPortNumber()
+            }
+        }
+
+        private fun askForPortNumber() {
+
+            val view = LayoutInflater.from(
+                this@GalleryActivity
+            ).inflate(R.layout.port_dialog, null)
+            AlertDialog.Builder(this@GalleryActivity)
+                .setView(view)
+                .setPositiveButton(
+                    "OK"
+                ) { _, _ ->
+                    val inputEditText = view.findViewById<EditText>(R.id.port_edit_text)
+                    val ngrokSuffix = inputEditText.text.toString()
+                    val sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(applicationContext)
+                    ConnectionHandler.setNgrokSuffix(ngrokSuffix)
+                    sharedPreferences.edit()
+                        .putString("ngrok_suffix", ngrokSuffix)
+                        .apply()
+                }
+                .show()
+        }
+    }
 }
 
-class PermissionManager(private val activity: Activity,
-                        private val requestedPermissions: List<String>,
-                        private val code: Int) {
+class PermissionManager(
+    private val activity: Activity,
+    private val requestedPermissions: List<String>,
+    private val code: Int
+) {
 
     fun checkPermissions() {
         val notGranted = findDeniedPermissions()
@@ -156,9 +181,9 @@ class PermissionManager(private val activity: Activity,
     }
 
     private fun findDeniedPermissions(): List<String> {
-        return requestedPermissions.filter {
-                p -> ContextCompat
-                        .checkSelfPermission(activity, p) == PackageManager.PERMISSION_DENIED
+        return requestedPermissions.filter { p ->
+            ContextCompat
+                .checkSelfPermission(activity, p) == PackageManager.PERMISSION_DENIED
         }
     }
 

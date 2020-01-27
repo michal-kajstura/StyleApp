@@ -2,6 +2,7 @@ package style.app.controller
 
 import android.content.ContentResolver
 import android.view.LayoutInflater
+import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -56,6 +57,7 @@ class CustomAdapter(private val photos: List<Photo>,
             if (position != RecyclerView.NO_POSITION) {
                 val photo = photos[position]
                 onClickFn(photo)
+                v.playSoundEffect(SoundEffectConstants.CLICK)
             }
         }
     }

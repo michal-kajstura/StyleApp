@@ -1,19 +1,17 @@
 package style.app.network
 
 import android.content.ContentResolver
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import okhttp3.*
-import style.app.SERVER_URL
 import style.app.model.Photo
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Paths
+import java.net.UnknownHostException
 
 class PhotoSender(private val contentResolver: ContentResolver,
-                  private val client: OkHttpClient
+                  private val postUrl: HttpUrl
 ) {
 
     fun send(photo: Photo, stylePhoto: Photo, sendPhoto: Boolean): Bitmap {
@@ -45,21 +43,34 @@ class PhotoSender(private val contentResolver: ContentResolver,
     }
 
     private fun postPhoto(postBody: RequestBody): Bitmap {
-        val postUrl = SERVER_URL + "transfer"
+//        val postUrl = ConnectionHandler.serverAddress + "transfer"
         val request = Request.Builder()
             .url(postUrl)
             .post(postBody)
             .build()
 
-        val body = client.newCall(request)
-            .execute()
-            .body()
-
-        if (body != null) {
-            val inputStream = body.byteStream()
-            return BitmapFactory.decodeStream(inputStream)
-        } else {
-            throw IOException()
+        try {
+            val body = ConnectionHandler.httpClient
+                .newCall(request)
+                .execute()
+                .body()
+            return getBitmapFromBody(body)
+        } catch (e: UnknownHostException) {
+            throw WrongHostnameException(postUrl.host())
         }
     }
+
+    private fun getBitmapFromBody(body: ResponseBody?): Bitmap {
+            if (body != null) {
+                val inputStream = body.byteStream()
+                return BitmapFactory.decodeStream(inputStream)
+            } else {
+                throw IOException("Response body is null")
+            }
+    }
+}
+
+class WrongHostnameException(private val host: String): Exception() {
+    override val message: String?
+        get() = "Host: $host is unknown"
 }

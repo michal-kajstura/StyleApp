@@ -1,14 +1,20 @@
 package style.app.controller
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.AudioManager
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.SoundEffectConstants
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
@@ -16,6 +22,7 @@ import kotlinx.android.synthetic.main.activity_style_photo.*
 import style.app.DIM_ALPHA
 import style.app.R
 import style.app.TEMP_PHOTO_FILENAME
+import style.app.model.Cache
 import style.app.model.Photo
 import style.app.model.saveBitmap
 import style.app.model.saveImage
@@ -34,15 +41,18 @@ class StyleActivity : AppCompatActivity() {
     private lateinit var originalPhoto: Photo
     private lateinit var styledPhoto: Photo
     private lateinit var adapter: CustomAdapter
+    private val cache = Cache()
     private val fetchTask: FetchStylesTask = FetchStylesTask()
     private lateinit var photoHandler: PhotoSender
+    private lateinit var audomanager: AudioManager
     private var sendPhoto = true
     private var name = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        photoHandler = PhotoSender(contentResolver, ConnectionHandler.httpClient)
+        audomanager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        photoHandler = PhotoSender(contentResolver, ConnectionHandler.getUrl("transfer"))
         setContentView(R.layout.activity_style_photo)
         assignPhoto()
         setupStyleBar()
@@ -62,6 +72,9 @@ class StyleActivity : AppCompatActivity() {
         if (photo != null) {
             originalPhoto = photo
             name = originalPhoto.name
+            cache.add(
+                BitmapFactory.decodeStream(contentResolver.openInputStream(photo.uri))
+            )
             fitPhoto(originalPhoto, originalPhoto.getRotation(contentResolver))
         } else
             throw NoPhotoException()
@@ -73,6 +86,25 @@ class StyleActivity : AppCompatActivity() {
                 savePhoto()
                 return true
             }
+            R.id.action_back -> {
+                val bitmap = cache.back()
+                bitmap?.let {
+                    val file = savePhotoToFile(it)
+                    fitPhoto(Photo(Uri.fromFile(file)))
+                }
+                audomanager.playSoundEffect(SoundEffectConstants.NAVIGATION_RIGHT)
+                return true
+            }
+            R.id.action_forward -> {
+                val bitmap = cache.forward()
+                bitmap?.let {
+                    val file = savePhotoToFile(bitmap)
+                    fitPhoto(Photo(Uri.fromFile(file)))
+                }
+                audomanager.playSoundEffect(SoundEffectConstants.NAVIGATION_RIGHT)
+                return true
+            }
+
         }
         return super.onOptionsItemSelected(item)
     }
@@ -144,6 +176,12 @@ class StyleActivity : AppCompatActivity() {
         }
     }
 
+    private fun savePhotoToFile(bitmap: Bitmap): File {
+        val file = File(getExternalFilesDir(null)!!, TEMP_PHOTO_FILENAME)
+        saveBitmap(bitmap, file)
+        return file
+    }
+
    inner class SendPhotoTask: AsyncTask<Photo, Void, Photo>() {
 
         override fun onPreExecute() {
@@ -156,8 +194,8 @@ class StyleActivity : AppCompatActivity() {
         override fun doInBackground(vararg params: Photo?): Photo {
             val stylePhoto = params[0]!!
             val bitmap = photoHandler.send(originalPhoto, stylePhoto, sendPhoto)
-            val file = File(getExternalFilesDir(null)!!, TEMP_PHOTO_FILENAME)
-            saveBitmap(bitmap, file)
+            cache.add(bitmap)
+            val file = savePhotoToFile(bitmap)
             return Photo(Uri.fromFile(file))
         }
 

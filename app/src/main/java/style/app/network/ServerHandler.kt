@@ -1,53 +1,54 @@
 package style.app.network
 
-import android.os.AsyncTask
-import com.jcraft.jsch.JSch
-import com.jcraft.jsch.JSchException
-import com.jcraft.jsch.Session
+import okhttp3.HttpUrl
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
-import style.app.*
+import okhttp3.Request
+import style.app.NGROK_ADDRESS
+import style.app.TIMEOUT
 import java.util.concurrent.TimeUnit
 
 
 object ConnectionHandler {
     val httpClient = initOkHttpClient()
-    lateinit var session: Session
-    var connected = false
 
-    class OpenSshTask: AsyncTask<Int, Void, Boolean>() {
-        override fun doInBackground(vararg params: Int?): Boolean {
-            val port = params[0]!!
-            val jsch = JSch()
-            session = jsch.getSession(USERNAME, HOSTNAME, port)
-            session.setConfig("StrictHostKeyChecking", "no")
-            session.setPassword(PASSWORD)
-            session.timeout = 100000
+    private var serverAddress = ""
 
-            try {
-                session.connect()
-                session.setPortForwardingL(LOCAL_PORT, "localhost", REMOTE_PORT)
-                connected = true
-                return true
-            } catch (e: JSchException) {
-                connected = false
-                return false
-            }
-        }
+    fun isConnected(): Boolean {
+        val requestUrl = getUrl("test")
+        val postBody = MultipartBody.Builder()
+           .setType(MultipartBody.FORM)
+           .addFormDataPart("test", "test").build()
+
+        val request = Request.Builder()
+            .url(requestUrl)
+            .post(postBody)
+            .build()
+
+        val response = httpClient
+            .newCall(request)
+            .execute()
+
+        return (response.code() == 200 || response.code() == 308)
     }
 
-    fun establishConnection(port: Int): Boolean {
-        return OpenSshTask().execute(port).get()
-    }
-
-    fun deleteConnection() {
-        session.delPortForwardingL(LOCAL_PORT)
-        connected = false
-    }
-
-     private fun initOkHttpClient(): OkHttpClient {
+    private fun initOkHttpClient(): OkHttpClient {
         return OkHttpClient().newBuilder()
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
             .build()
     }
+
+    fun setNgrokSuffix(ngrokSuffix: String) {
+        serverAddress = "$ngrokSuffix.$NGROK_ADDRESS"
+    }
+
+    fun getUrl(url: String=""): HttpUrl {
+        return HttpUrl.Builder()
+            .scheme("http")
+            .host(serverAddress)
+            .addPathSegment(url)
+            .build()
+    }
 }
+
