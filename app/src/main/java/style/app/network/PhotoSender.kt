@@ -43,7 +43,6 @@ class PhotoSender(private val contentResolver: ContentResolver,
     }
 
     private fun postPhoto(postBody: RequestBody): Bitmap {
-//        val postUrl = ConnectionHandler.serverAddress + "transfer"
         val request = Request.Builder()
             .url(postUrl)
             .post(postBody)
